@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mapper.CourseLessonMapper">
+    <select id="findLessonByCourseId" parameterType="int" resultType="courseLesson">
+        select *
+        from course_lesson
+        where course_id = #{courseId}
+    </select>
+</mapper>

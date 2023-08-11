@@ -1,0 +1,216 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mapper.CourseMapper">
+    <update id="updateCourse" parameterType="course">
+        UPDATE course
+        <set>
+            <if test="courseName != null and courseName != ''">
+                course_name = #{courseName},
+            </if>
+
+            <if test="brief != null and brief != ''">
+                brief=#{brief},
+            </if>
+
+            <if test="previewFirstField != null and previewFirstField != ''">
+                preview_first_field=#{previewFirstField},
+            </if>
+
+            <if test="previewSecondField != null and previewSecondField != ''">
+                preview_second_field=#{previewSecondField},
+            </if>
+
+            <if test="courseImgUrl != null and courseImgUrl != ''">
+                course_img_url=#{courseImgUrl},
+            </if>
+
+            <if test="courseListImg != null and courseListImg != ''">
+                course_list_img=#{courseListImg},
+            </if>
+
+            <if test="sortNum != null and sortNum != ''">
+                sort_num=#{sortNum},
+            </if>
+            <if test="price != null and price != ''">
+                price=#{price},
+            </if>
+            <if test="discounts != null and discounts != ''">
+                discounts=#{discounts},
+            </if>
+            <if test="sales != null and sales != '' or sales==0">
+                sales=#{sales},
+            </if>
+            <if test="discountsTag != null and discountsTag != ''">
+                discounts_tag=#{discountsTag},
+            </if>
+            <if test="courseDescriptionMarkDown != null and courseDescriptionMarkDown != ''">
+                course_description_mark_down=#{courseDescriptionMarkDown},
+            </if>
+            <if test="updateTime != null">
+            update_time=#{updateTime},
+            </if>
+        </set>
+        <where>
+            <if test="id!=null and id != '' ">
+                id=#{id}
+            </if>
+        </where>
+    </update>
+
+    <update id="updateTeacher" parameterType="teacher">
+        UPDATE teacher
+        <set>
+            <if test="teacherName != null and teacherName != ''">
+                teacher_name = #{teacherName},
+            </if>
+            <if test="position != null and position != ''">
+                position = #{position},
+            </if>
+            <if test="description != null and description != ''">
+                description = #{description},
+            </if>
+            <if test="updateTime != null">
+                update_time=#{updateTime}
+            </if>
+        </set>
+        <where>
+            <if test="courseId != null and courseId != '' ">
+                course_id = #{courseId}
+            </if>
+        </where>
+    </update>
+    <update id="updateCourseStatus" parameterType="course">
+        update course
+        set status      = #{status},
+            update_time = #{updateTime}
+        where id = #{id}
+    </update>
+
+    <select id="findCourseByCondition" resultType="com.pojo.Course" parameterType="com.pojo.CourseVo">
+        select * from course
+        <where>
+            <if test="courseName!=null and courseName!=''">
+                and course_name like concat('%',#{courseName},'%')
+            </if>
+            <if test="status !=null">
+                and status = #{status}
+            </if>
+            <if test="true">
+                and is_del != 1
+            </if>
+        </where>
+    </select>
+    <select id="findCourseById" resultType="com.pojo.CourseVo" parameterType="int">
+        select c.*,
+               t.teacher_name /*teacher_name*/,
+               t.position /*position*/,
+               t.description /*description*/
+        from course c
+                 left join teacher t on c.id = t.course_id
+        where c.id = #{id}
+    </select>
+
+    <!--...............................................................................-->
+    <resultMap id="sectionResultMap" type="courseSection">
+        <result property="courseId" column="course_id"></result>
+        <collection property="lessonList" column="course_id" ofType="courseLesson"
+                    select="com.mapper.CourseMapper.findLessonByCourseId" fetchType="eager"/>
+    </resultMap>
+    <select id="findSectionAndLesson" resultMap="sectionResultMap">
+        select *
+        from course_section
+        where course_id = #{courseId}
+        order by order_num
+    </select>
+    <select id="findLessonByCourseId" parameterType="int" resultType="courseLesson">
+        select *
+        from course_lesson
+        where course_id = #{courseId}
+    </select>
+    <!--...............................................................................-->
+
+    <insert id="saveCourse" parameterType="course">
+        INSERT INTO course(course_name, brief,
+        preview_first_field, preview_second_field, course_img_url, course_list_img, sort_num,
+        price, discounts, sales, discounts_tag, course_description_mark_down, create_time,
+        update_time)
+        VALUES (#{courseName}, #{brief}, #{previewFirstField}, #{previewSecondField},
+        #{courseImgUrl}, #{courseListImg}, #{sortNum}, #{price}, #{discounts}, #{sales}, #{discountsTag},
+        #{courseDescriptionMarkDown}, #{createTime}, #{updateTime});
+
+        <selectKey resultType="int" keyColumn="id" order="AFTER" keyProperty="id">
+            select LAST_INSERT_ID();
+        </selectKey>
+    </insert>
+
+    <!-- 保存讲师信息	-->
+    <insert id="saveTeacher" parameterType="teacher">
+        INSERT INTO teacher(course_id, teacher_name, POSITION,
+                            description, create_time, update_time)
+        VALUES (#{courseId}, #{teacherName}, #{position}, #{description},
+                #{createTime}, #{updateTime});
+    </insert>
+
+    <select id="findCourseNameById" resultType="com.pojo.Course">
+        select id, course_name
+        from course
+        where id = #{courseId}
+    </select>
+
+    <!-- 保存章节 -->
+    <insert id="saveSection" parameterType="com.pojo.CourseSection">
+        INSERT INTO course_section(course_id, section_name,
+                                   description, order_num,
+                                   STATUS,
+                                   create_time,
+                                   update_time)
+        VALUES (#{courseId}, #{sectionName},
+                #{description}, #{orderNum}, #{status},
+                #{createTime}, #{updateTime});
+        <selectKey resultType="int" keyProperty="id" keyColumn="id" order="AFTER">
+            select LAST_INSERT_ID();
+        </selectKey>
+    </insert>
+
+    <!-- 修改章节 -->
+    <update id="updateSection" parameterType="com.pojo.CourseSection">
+        UPDATE course_section
+        <set>
+            <if test="sectionName != null and sectionName != ''">
+                section_name = #{sectionName},
+            </if>
+
+            <if test="description != null and description != ''">
+                description = #{description},
+            </if>
+
+            <if test="orderNum != null and orderNum != '' or orderNum == 0">
+                order_num = #{orderNum},
+            </if>
+
+            <if test="updateTime != null">
+                update_time = #{updateTime}
+            </if>
+        </set>
+        <where>
+            <if test="id != null and id != '' ">
+                id = #{id}
+            </if>
+        </where>
+    </update>
+
+    <!-- 添加课时	-->
+    <insert id="saveCourseLesson" parameterType="com.pojo.CourseLesson">
+        INSERT INTO course_lesson (id, course_id, section_id,
+        theme, duration, is_free,
+        order_num, create_time,
+        update_time)
+        VALUES (#{id}, #{courseId}, #{sectionId}, #{theme},
+        #{duration}, #{isFree}, #{orderNum},
+        #{createTime}, #{updateTime});
+        <selectKey resultType="int" keyProperty="id" keyColumn="id" order="AFTER">
+            select LAST_INSERT_ID();
+        </selectKey>
+    </insert>
+
+</mapper>

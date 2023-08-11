@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mapper.RoleMapper">
+
+    <select id="findAllRole" resultType="role" parameterType="role">
+        select * from roles
+        <where>
+            <if test="name !=null and name != ''">
+                and name = #{name}
+            </if>
+        </where>
+    </select>
+
+    <insert id="saveRole" parameterType="role">
+        insert into roles
+        values ( null, #{code}, #{name}, #{description}, #{createdTime}, #{updatedTime}
+        , #{createdBy}, #{updatedBy})
+        <selectKey resultType="int" keyColumn="id" keyProperty="id" order="AFTER">
+            select LAST_INSERT_ID();
+        </selectKey>
+    </insert>
+
+    <update id="updateRole" parameterType="role">
+        update roles
+        <set>
+            <if test="name != null and name!=''">
+                name = #{name},
+            </if>
+            <if test="code!= null and code!=''">
+                code = #{code},
+            </if>
+            <if test="description !=null and description!=''">
+                description = #{description},
+            </if>
+            <if test="updatedTime!= null">
+                updated_time = #{updatedTime},
+            </if>
+        </set>
+        <where>
+            id = #{id}
+        </where>
+    </update>
+
+    <select id="findAllMenuByRoleId" resultType="int" parameterType="int">
+        select role_menu_relation.menu_id
+        from roles
+                 join role_menu_relation on roles.id = role_menu_relation.role_id
+        where roles.id = #{roleId}
+    </select>
+
+    <delete id="deleteRoleContextMenu" parameterType="int">
+        delete
+        from role_menu_relation
+        where role_id = #{id}
+    </delete>
+
+    <insert id="RoleContextMenu" parameterType="role_menu_relation">
+        insert into role_menu_relation
+        values (null, #{menuId}, #{roleId}, #{createdTime}, #{updatedTime}, #{createdBy}, #{updatedby})
+    </insert>
+
+
+    <delete id="deleteRole" parameterType="int">
+        delete
+        from roles
+        where id = #{id}
+    </delete>
+
+</mapper>

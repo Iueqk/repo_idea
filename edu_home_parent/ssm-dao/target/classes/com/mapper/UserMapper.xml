@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mapper.UserMapper">
+
+    <resultMap id="userMap" type="user">
+        <id property="id" column="id"></id>
+        <result property="name" column="name"/>
+        <result property="portrait" column="portrait"/>
+        <result property="phone" column="phone"/>
+        <result property="password" column="password"/>
+        <result property="status" column="status"/>
+        <result property="create_time" column="create_time"/>
+        <result property="update_time" column="update_time"/>
+    </resultMap>
+
+    <select id="findAllUserByPage" resultMap="userMap">
+        SELECT
+        id, NAME,portrait, phone, PASSWORD, STATUS,create_time,update_time
+        FROM USER
+        <where>
+            <if test="true">
+                and is_del != 1
+            </if>
+            <if test="username != null">
+                and name = #{username}
+            </if>
+            <if test="startCreateTime != null and endCreateTime != null">
+                and create_time BETWEEN #{startCreateTime} AND #{endCreateTime}
+            </if>
+        </where>
+    </select>
+
+    <update id="updateUserStatus" parameterType="user">
+        update user
+        set status = #{status},update_time = #{update_time}
+        <where>
+            <if test=" id != null ">
+                id = #{id}
+            </if>
+        </where>
+    </update>
+    <select id="login" parameterType="user" resultType="user">
+        select *
+        from user
+        where phone = #{phone}
+    </select>
+    <select id="findUserRelationRoleById" parameterType="int" resultType="role">
+        SELECT r.*
+        FROM roles r
+                 INNER JOIN user_role_relation ur ON r.id = ur.role_id
+        WHERE ur.user_id = #{userId}
+        ORDER BY r.id;
+    </select>
+    <delete id="deleteUserRelationRoleByUserId" parameterType="int">
+        delete
+        from user_role_relation
+        where user_id = #{userId}
+    </delete>
+    <insert id="userContextRole" parameterType="com.pojo.User_Role_relation">
+        insert into user_role_relation
+        values (null, #{userId}, #{roleId},
+                #{createdTime}, #{updatedTime}, #{createdBy},
+                #{updatedby})
+    </insert>
+
+    <insert id="registerUser" parameterType="user">
+        insert into user
+        values (null, #{name}, #{portrait}, #{phone}, #{password},
+                #{reg_ip}, #{account_non_expired}, #{credentials_non_expired}, #{account_non_locked},
+                #{status}, #{is_del}, #{create_time}, #{update_time})
+    </insert>
+
+    <select id="findParentMenuByRoleId" parameterType="java.util.List" resultType="menu">
+        SELECT
+        DISTINCT m.*
+        FROM roles r INNER JOIN role_menu_relation rm ON r.`id` = rm.role_id INNER JOIN menu m ON rm.menu_id = m.id
+        WHERE m.parent_id = -1 AND r.id IN
+        <foreach collection="list" item="item" open="(" separator=","
+                 close=")">
+            #{item}
+        </foreach>
+        GROUP BY m.id
+    </select>
+
+    <resultMap id="findSubMenuByPidResult" type="menu">
+        <collection property="subMenuList" column="id" ofType="menu"
+                    select="com.mapper.UserMapper.findSubMenuPid" fetchType="eager"></collection>
+    </resultMap>
+    <select id="findSubMenuByPid" parameterType="int" resultMap="findSubMenuByPidResult">
+        select *
+        from menu
+        where parent_id = #{pid}
+    </select>
+    <select id="findResourceByRoleId" parameterType="java.util.List" resultType="resource">
+        select *
+        from resource
+        INNER JOIN role_resource_relation rrr on resource.id = rrr.resource_id
+        INNER JOIN roles r on rrr.role_id = r.id
+        where r.id in
+        <foreach collection="list" item="roleId" open="(" separator="," close=")">
+            #{roleId}
+        </foreach>
+    </select>
+</mapper>
